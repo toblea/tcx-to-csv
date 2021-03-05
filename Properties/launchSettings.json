@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "tcx-to-sense": {
+      "commandName": "Project",
+      "commandLineArgs": "-input-folder=\"C:\\Users\\bsq\\QlikTech Inc\\OneDrive - QlikTech Inc\\Desktop\\Garmin\""
+    }
+  }
+}
