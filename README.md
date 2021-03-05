@@ -6,3 +6,10 @@ Place your Garmin TCX files (for instance activity_581212121.tcx) in a folder an
 ```
 tcx-to-csv.exe -input-folder="c:\temp\garmin-files" -output-folder="c:\tcx-to-csv\result"
 ```
+
+Outputs three files:
+```
+* activities.csv
+* laps.csv
+* tracks.csv
+```
