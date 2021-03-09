@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,12 +14,15 @@ namespace TcxToCsv
 	{
 		static int Main(string[] args)
 		{
+			var enUs = CultureInfo.GetCultureInfo("en-US");
 			const string inputFolderKey = "-input-folder";
 			const string outputFolderKey = "-output-folder";
+			const string activityNamesFileKey = "-activity-names-file";
 
 			var outputFolder = Path.Join(Environment.CurrentDirectory, "out");
 			string inputFolder;
-
+			Dictionary<string,string> activityNames;
+			
 			var options = (args ?? Array.Empty<string>())
 				.Select(a => a.Split('='))
 				.ToDictionary(a => a[0], b => b[1]);
@@ -47,17 +52,34 @@ namespace TcxToCsv
 				Console.WriteLine($"WARNING: Writing output to: {outputFolder}");
 				Console.ForegroundColor = c;
 			}
+
+			if (options.ContainsKey(activityNamesFileKey))
+			{
+				//activityNames = options[activityNamesFileKey];
+				// For instance:
+				// 21213123123;Activity One
+				// 21213126262;Activity Two
+				// 21213534523;Activity Three
+				// 21213123745;Activity Four
+				var names = File.ReadLines(options[activityNamesFileKey]);
+				activityNames = names.Select(x => x.Split(';')).ToDictionary(col => col[0], col => col[1]);
+			}
+			else
+			{
+				activityNames = new Dictionary<string, string>();
+			}
 			
 			var activitiesFile = Path.Join(outputFolder, "activities.csv");
 			var lapsFile = Path.Join(outputFolder, "laps.csv");
 			var tracksFile = Path.Join(outputFolder, "tracks.csv");
+			var acts = 0;
 
 			var sw = new Stopwatch();
 			if (!Directory.Exists(outputFolder))
 			{
 				Directory.CreateDirectory(outputFolder);
 			}
-			File.WriteAllText(activitiesFile, "ActivityId;ActivitySport;ActivityCreatorName;ActivityCreatorProductID");
+			File.WriteAllText(activitiesFile, "ActivityId;ActivityNumber;ActivityName;ActivitySport;ActivityCreatorName;ActivityCreatorProductID");
 			File.WriteAllText(lapsFile, "ActivityId;LapNumber;AverageHeartRateBpm;Calories;DistanceMeters;AvgRunCadence;AvgSpeed;MaxRunCadence;Intensity;MaximumHeartRateBpm;MaximumSpeed;StartTime;TotalTimeSeconds;TriggerMethod");
 			File.WriteAllText(tracksFile, "ActivityId;LapNumber;TrackNumber;AltitudeMeters;DistanceMeters;RunCadence;Speed;HeartRateBpm;LatitudeDegrees;LongitudeDegrees;Time");
 
@@ -65,27 +87,31 @@ namespace TcxToCsv
 			Console.WriteLine("Starting conversion . . .");
 			foreach (var file in Directory.GetFiles(inputFolder, "*.tcx"))
 			{
+				var fileName = file.Split(Path.DirectorySeparatorChar).Last();
 				var xml = File.ReadAllText(file);
 				var trainingDb = xml.ParseXml<TrainingCenterDatabase>();
 				var a = trainingDb.Activities.Activity;
+				acts++;
 
-				File.AppendAllText(activitiesFile, $"\n{a.Id};{a.Sport};{a.Creator?.Name};{a.Creator?.ProductID}");
+				var activityName = activityNames.ContainsKey(fileName) ? activityNames[fileName].Replace(";", ":") : $"Activity {acts}";
+
+				File.AppendAllText(activitiesFile, $"\n{a.Id};{acts};{activityName};{a.Sport};{a.Creator?.Name};{a.Creator?.ProductID}");
 
 				for (var i = 0; i < a.Lap.Length; i++)
 				{
 					var lap = a.Lap[i];
 					var tmp1 = new StringBuilder();
-					tmp1.Append($"\n{a.Id};");
+					tmp1.Append($"\n{a.Id}");
 					tmp1.Append($";{i + 1}");
-					tmp1.Append($";{lap.AverageHeartRateBpm?.Value}");
-					tmp1.Append($";{lap.Calories}");
-					tmp1.Append($";{lap.DistanceMeters}");
-					tmp1.Append($";{lap.Extensions?.LX?.AvgRunCadence}");
-					tmp1.Append($";{lap.Extensions?.LX?.AvgSpeed}");
-					tmp1.Append($";{lap.Extensions?.LX?.MaxRunCadence}");
+					tmp1.Append($";{lap.AverageHeartRateBpm?.Value.ToString(enUs)}");
+					tmp1.Append($";{lap.Calories.ToString(enUs)}");
+					tmp1.Append($";{lap.DistanceMeters.ToString(enUs)}");
+					tmp1.Append($";{lap.Extensions?.LX?.AvgRunCadence.ToString(enUs)}");
+					tmp1.Append($";{lap.Extensions?.LX?.AvgSpeed.ToString(enUs)}");
+					tmp1.Append($";{lap.Extensions?.LX?.MaxRunCadence.ToString(enUs)}");
 					tmp1.Append($";{lap.Intensity}");
-					tmp1.Append($";{lap.MaximumHeartRateBpm?.Value}");
-					tmp1.Append($";{lap.MaximumSpeed}");
+					tmp1.Append($";{lap.MaximumHeartRateBpm?.Value.ToString(enUs)}");
+					tmp1.Append($";{lap.MaximumSpeed.ToString(enUs)}");
 					tmp1.Append($";{lap.StartTime:u}");
 					tmp1.Append($";{lap.TotalTimeSeconds}");
 					tmp1.Append($";{lap.TriggerMethod}");
@@ -101,13 +127,13 @@ namespace TcxToCsv
 						tmp2.Append($"\n{a.Id}");
 						tmp2.Append($";{i + 1}");
 						tmp2.Append($";{j + 1}");
-						tmp2.Append($";{track.AltitudeMeters}");
-						tmp2.Append($";{track.DistanceMeters}");
-						tmp2.Append($";{track.Extensions?.TPX?.RunCadence}");
-						tmp2.Append($";{track.Extensions?.TPX?.Speed}");
-						tmp2.Append($";{track.HeartRateBpm?.Value}");
-						tmp2.Append($";{track.Position?.LatitudeDegrees}");
-						tmp2.Append($";{track.Position?.LongitudeDegrees}");
+						tmp2.Append($";{track.AltitudeMeters.ToString(enUs)}");
+						tmp2.Append($";{track.DistanceMeters.ToString(enUs)}");
+						tmp2.Append($";{track.Extensions?.TPX?.RunCadence.ToString(enUs)}");
+						tmp2.Append($";{track.Extensions?.TPX?.Speed.ToString(enUs)}");
+						tmp2.Append($";{track.HeartRateBpm?.Value.ToString(enUs)}");
+						tmp2.Append($";{track.Position?.LatitudeDegrees.ToString(enUs)}");
+						tmp2.Append($";{track.Position?.LongitudeDegrees.ToString(enUs)}");
 						tmp2.Append($";{track.Time:u}");
 
 						File.AppendAllText(tracksFile, tmp2.ToString());
@@ -138,7 +164,7 @@ namespace TcxToCsv
 		
 		public static T ParseXml<T>(this string @this) where T : class
 		{
-			var reader = XmlReader.Create(@this.Trim().ToStream(), new XmlReaderSettings() { ConformanceLevel = ConformanceLevel.Document });
+			var reader = XmlReader.Create(@this.Trim().ToStream(), new XmlReaderSettings { ConformanceLevel = ConformanceLevel.Document });
 			return new XmlSerializer(typeof(T)).Deserialize(reader) as T;
 		}
 	}
