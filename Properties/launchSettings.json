@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "tcx-to-sense": {
-      "commandName": "Project",
-      "commandLineArgs": "-input-folder=\"C:\\Users\\bsq\\QlikTech Inc\\OneDrive - QlikTech Inc\\Desktop\\Garmin\" -output-folder=\"C:\\Users\\bsq\\QlikTech Inc\\OneDrive - QlikTech Inc\\Desktop\\Garmin\\out\" -activity-names-file=\"C:\\Users\\bsq\\QlikTech Inc\\OneDrive - QlikTech Inc\\Desktop\\Garmin\\activities.csv\""
-    }
-  }
-}
